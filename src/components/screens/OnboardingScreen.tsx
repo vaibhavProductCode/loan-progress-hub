@@ -1,134 +1,368 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, FileSearch, Clock, Bell, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ShieldCheck, Building2, User, Check, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useLoan } from '@/contexts/LoanContext';
 import { cn } from '@/lib/utils';
 
-interface OnboardingStep {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  color: string;
-}
+type OnboardingStep = 'aadhaar' | 'bank' | 'confirmation';
 
-const steps: OnboardingStep[] = [
-  {
-    icon: FileSearch,
-    title: 'Loan journeys have stages',
-    description: 'Every loan application goes through multiple stages — submission, verification, review, and decision. We show you exactly where you are.',
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    icon: Clock,
-    title: 'Verification takes time',
-    description: 'Lenders need to verify your documents, income, and identity. This can take a few days. We keep you informed throughout.',
-    color: 'bg-secondary/10 text-secondary',
-  },
-  {
-    icon: Bell,
-    title: 'Issues surface early',
-    description: 'If something needs your attention — a missing document or unclear information — we tell you right away. No surprises.',
-    color: 'bg-warning/10 text-warning',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'We don\'t decide approvals',
-    description: 'LoanPulse helps you track and understand your application. The approval decision is always made by the lender.',
-    color: 'bg-success/10 text-success',
-  },
+const BANKS = [
+  'State Bank of India',
+  'HDFC Bank',
+  'ICICI Bank',
+  'Axis Bank',
+  'Kotak Mahindra Bank',
+  'Punjab National Bank',
+  'Bank of Baroda',
+  'Canara Bank',
+  'Union Bank of India',
+  'IndusInd Bank',
 ];
 
+const BRANCHES: Record<string, string[]> = {
+  'State Bank of India': ['Mumbai Main Branch', 'Delhi Central', 'Bangalore IT Park', 'Chennai Anna Nagar'],
+  'HDFC Bank': ['Mumbai BKC', 'Delhi CP', 'Bangalore Koramangala', 'Chennai T Nagar'],
+  'ICICI Bank': ['Mumbai Nariman Point', 'Delhi Connaught Place', 'Bangalore MG Road', 'Chennai Adyar'],
+  'Axis Bank': ['Mumbai Fort', 'Delhi Nehru Place', 'Bangalore Indiranagar', 'Chennai Nungambakkam'],
+  'Kotak Mahindra Bank': ['Mumbai Worli', 'Delhi GK', 'Bangalore HSR Layout', 'Chennai Mylapore'],
+  'Punjab National Bank': ['Mumbai Andheri', 'Delhi Karol Bagh', 'Bangalore Whitefield', 'Chennai Kilpauk'],
+  'Bank of Baroda': ['Mumbai Churchgate', 'Delhi Janpath', 'Bangalore Jayanagar', 'Chennai Egmore'],
+  'Canara Bank': ['Mumbai Bandra', 'Delhi Saket', 'Bangalore BTM', 'Chennai Velachery'],
+  'Union Bank of India': ['Mumbai Colaba', 'Delhi Dwarka', 'Bangalore Marathahalli', 'Chennai Porur'],
+  'IndusInd Bank': ['Mumbai Lower Parel', 'Delhi Vasant Vihar', 'Bangalore Electronic City', 'Chennai OMR'],
+};
+
 export function OnboardingScreen() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [step, setStep] = useState<OnboardingStep>('aadhaar');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarConsent, setAadhaarConsent] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [selectedBank, setSelectedBank] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [bankSearch, setBankSearch] = useState('');
+  const [branchSearch, setBranchSearch] = useState('');
+  
   const navigate = useNavigate();
   const { completeOnboarding } = useLoan();
 
-  const isLastStep = currentStep === steps.length - 1;
-  const step = steps[currentStep];
-
-  const handleNext = () => {
-    if (isLastStep) {
-      completeOnboarding();
-      navigate('/');
-    } else {
-      setCurrentStep(prev => prev + 1);
+  // Format Aadhaar with spaces
+  const formatAadhaar = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 12);
+    const parts = [];
+    for (let i = 0; i < digits.length; i += 4) {
+      parts.push(digits.slice(i, i + 4));
     }
+    return parts.join(' ');
   };
 
-  const handleSkip = () => {
-    completeOnboarding();
+  const handleAadhaarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatAadhaar(e.target.value);
+    setAadhaarNumber(formatted);
+  };
+
+  const handleAadhaarSubmit = () => {
+    if (aadhaarNumber.replace(/\s/g, '').length !== 12 || !aadhaarConsent) return;
+    
+    setIsVerifying(true);
+    // Simulate verification (5 seconds demo mode)
+    setTimeout(() => {
+      setIsVerifying(false);
+      setStep('bank');
+    }, 3000);
+  };
+
+  const handleBankSubmit = () => {
+    if (!selectedBank || !selectedBranch) return;
+    setStep('confirmation');
+  };
+
+  const handleComplete = () => {
+    const last4 = aadhaarNumber.replace(/\s/g, '').slice(-4);
+    completeOnboarding({
+      name: 'User', // In real app, this would come from Aadhaar verification
+      aadhaarLast4: last4,
+      bankName: selectedBank,
+      bankBranch: selectedBranch,
+      isVerified: true,
+    });
     navigate('/');
   };
 
-  return (
-    <div className="min-h-screen flex flex-col px-6 py-8">
-      {/* Skip button */}
-      <div className="flex justify-end mb-8">
-        <Button variant="ghost" size="sm" onClick={handleSkip}>
-          Skip
+  const filteredBanks = BANKS.filter(bank => 
+    bank.toLowerCase().includes(bankSearch.toLowerCase())
+  );
+
+  const availableBranches = selectedBank ? (BRANCHES[selectedBank] || []) : [];
+  const filteredBranches = availableBranches.filter(branch =>
+    branch.toLowerCase().includes(branchSearch.toLowerCase())
+  );
+
+  // Render based on step
+  if (step === 'aadhaar') {
+    return (
+      <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+        {/* Progress */}
+        <div className="flex gap-2 mb-8">
+          <div className="flex-1 h-1 bg-primary rounded-full" />
+          <div className="flex-1 h-1 bg-border rounded-full" />
+          <div className="flex-1 h-1 bg-border rounded-full" />
+        </div>
+
+        {/* Icon */}
+        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+          <ShieldCheck className="w-8 h-8 text-primary" />
+        </div>
+
+        {/* Content */}
+        <h1 className="text-2xl font-semibold text-foreground mb-2 font-serif">
+          Verify your identity
+        </h1>
+        <p className="text-muted-foreground mb-8">
+          Enter your 12-digit Aadhaar number to verify your identity securely.
+        </p>
+
+        <div className="space-y-6 flex-1">
+          <div>
+            <Label htmlFor="aadhaar" className="text-sm font-medium">
+              Aadhaar Number
+            </Label>
+            <Input
+              id="aadhaar"
+              type="text"
+              placeholder="XXXX XXXX XXXX"
+              value={aadhaarNumber}
+              onChange={handleAadhaarChange}
+              className="mt-2 h-12 text-lg tracking-wider"
+              maxLength={14}
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Your Aadhaar is used only for verification. We do not store it.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Checkbox 
+              id="consent" 
+              checked={aadhaarConsent}
+              onCheckedChange={(checked) => setAadhaarConsent(checked === true)}
+            />
+            <label htmlFor="consent" className="text-sm text-muted-foreground leading-relaxed">
+              I consent to verify my identity using Aadhaar eKYC and understand my data will be processed securely.
+            </label>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <Button 
+          className="w-full h-12 mt-auto"
+          disabled={aadhaarNumber.replace(/\s/g, '').length !== 12 || !aadhaarConsent || isVerifying}
+          onClick={handleAadhaarSubmit}
+        >
+          {isVerifying ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              Verifying...
+            </>
+          ) : (
+            <>
+              Continue
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </>
+          )}
         </Button>
+      </div>
+    );
+  }
+
+  if (step === 'bank') {
+    return (
+      <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+        {/* Progress */}
+        <div className="flex gap-2 mb-8">
+          <div className="flex-1 h-1 bg-primary rounded-full" />
+          <div className="flex-1 h-1 bg-primary rounded-full" />
+          <div className="flex-1 h-1 bg-border rounded-full" />
+        </div>
+
+        {/* Back button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-fit mb-4 -ml-2"
+          onClick={() => setStep('aadhaar')}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+
+        {/* Icon */}
+        <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+          <Building2 className="w-8 h-8 text-secondary" />
+        </div>
+
+        {/* Content */}
+        <h1 className="text-2xl font-semibold text-foreground mb-2 font-serif">
+          Select your bank
+        </h1>
+        <p className="text-muted-foreground mb-6">
+          Choose your primary bank for loan disbursement.
+        </p>
+
+        <div className="space-y-6 flex-1 overflow-hidden flex flex-col">
+          {/* Bank Selection */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Bank Name</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search bank..."
+                value={bankSearch}
+                onChange={(e) => setBankSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="mt-2 max-h-32 overflow-y-auto border rounded-lg">
+              {filteredBanks.map(bank => (
+                <button
+                  key={bank}
+                  onClick={() => {
+                    setSelectedBank(bank);
+                    setSelectedBranch('');
+                    setBankSearch('');
+                  }}
+                  className={cn(
+                    "w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between",
+                    selectedBank === bank && "bg-primary/10 text-primary"
+                  )}
+                >
+                  {bank}
+                  {selectedBank === bank && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Branch Selection */}
+          {selectedBank && (
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Branch</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search branch..."
+                  value={branchSearch}
+                  onChange={(e) => setBranchSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="mt-2 max-h-32 overflow-y-auto border rounded-lg">
+                {filteredBranches.map(branch => (
+                  <button
+                    key={branch}
+                    onClick={() => {
+                      setSelectedBranch(branch);
+                      setBranchSearch('');
+                    }}
+                    className={cn(
+                      "w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between",
+                      selectedBranch === branch && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    {branch}
+                    {selectedBranch === branch && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CTA */}
+        <Button 
+          className="w-full h-12 mt-4"
+          disabled={!selectedBank || !selectedBranch}
+          onClick={handleBankSubmit}
+        >
+          Continue
+          <ArrowRight className="w-5 h-5 ml-2" />
+        </Button>
+      </div>
+    );
+  }
+
+  // Confirmation step
+  return (
+    <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+      {/* Progress */}
+      <div className="flex gap-2 mb-8">
+        <div className="flex-1 h-1 bg-primary rounded-full" />
+        <div className="flex-1 h-1 bg-primary rounded-full" />
+        <div className="flex-1 h-1 bg-primary rounded-full" />
+      </div>
+
+      {/* Back button */}
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="w-fit mb-4 -ml-2"
+        onClick={() => setStep('bank')}
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back
+      </Button>
+
+      {/* Icon */}
+      <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mb-6">
+        <User className="w-8 h-8 text-success" />
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
-        <div 
-          key={currentStep}
-          className="animate-fade-in-up"
-        >
-          <div className={cn(
-            "w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center",
-            step.color
-          )}>
-            <step.icon className="w-10 h-10" />
+      <h1 className="text-2xl font-semibold text-foreground mb-2 font-serif">
+        Confirm your details
+      </h1>
+      <p className="text-muted-foreground mb-8">
+        Please review your information before proceeding.
+      </p>
+
+      <div className="flex-1 space-y-4">
+        {/* Aadhaar Summary */}
+        <div className="p-4 bg-muted/50 rounded-xl">
+          <p className="text-sm text-muted-foreground mb-1">Aadhaar Number</p>
+          <p className="font-medium text-foreground">XXXX XXXX {aadhaarNumber.slice(-4)}</p>
+        </div>
+
+        {/* Bank Summary */}
+        <div className="p-4 bg-muted/50 rounded-xl">
+          <p className="text-sm text-muted-foreground mb-1">Bank</p>
+          <p className="font-medium text-foreground">{selectedBank}</p>
+          <p className="text-sm text-muted-foreground mt-2 mb-1">Branch</p>
+          <p className="font-medium text-foreground">{selectedBranch}</p>
+        </div>
+
+        {/* Verification Badge */}
+        <div className="flex items-center gap-3 p-4 bg-success-bg rounded-xl">
+          <div className="w-10 h-10 bg-success/20 rounded-full flex items-center justify-center">
+            <Check className="w-5 h-5 text-success" />
           </div>
-
-          <h2 className="text-xl font-semibold text-foreground mb-4 font-serif">
-            {step.title}
-          </h2>
-
-          <p className="text-muted-foreground text-base leading-relaxed max-w-xs mx-auto">
-            {step.description}
-          </p>
+          <div>
+            <p className="font-medium text-success">Identity Verified</p>
+            <p className="text-sm text-muted-foreground">Your Aadhaar has been verified successfully</p>
+          </div>
         </div>
       </div>
 
-      {/* Progress dots */}
-      <div className="flex justify-center gap-2 mb-8">
-        {steps.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentStep(index)}
-            className={cn(
-              "w-2 h-2 rounded-full transition-all duration-300",
-              index === currentStep 
-                ? "bg-primary w-6" 
-                : "bg-border hover:bg-muted-foreground/30"
-            )}
-          />
-        ))}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex gap-3">
-        {currentStep > 0 && (
-          <Button 
-            variant="outline"
-            className="flex-1 h-12"
-            onClick={() => setCurrentStep(prev => prev - 1)}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        )}
-        <Button 
-          className="flex-1 h-12"
-          onClick={handleNext}
-        >
-          {isLastStep ? 'Get Started' : 'Next'}
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
+      {/* CTA */}
+      <Button 
+        className="w-full h-12 mt-auto bg-secondary hover:bg-secondary/90"
+        onClick={handleComplete}
+      >
+        Continue to Home
+        <ArrowRight className="w-5 h-5 ml-2" />
+      </Button>
     </div>
   );
 }

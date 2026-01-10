@@ -21,7 +21,9 @@ const navItems: NavItem[] = [
 export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { hasApplication, unreadCount } = useLoan();
+  const { activeApplications, unreadCount } = useLoan();
+
+  const hasApplication = activeApplications.length > 0;
 
   const filteredItems = navItems.filter(item => 
     !item.requiresApplication || hasApplication
