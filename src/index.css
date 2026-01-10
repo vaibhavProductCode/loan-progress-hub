@@ -2,95 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* LoanPulse Design System - Trust, Clarity, Calm */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Brand Colors */
+    --background: 0 0% 99%;
+    --foreground: 210 20% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 20% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 20% 20%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Trust Blue */
+    --primary: 210 65% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Guidance Teal */
+    --secondary: 174 55% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted */
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 15% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Soft Teal */
+    --accent: 174 40% 92%;
+    --accent-foreground: 174 55% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* States */
+    --destructive: 0 45% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Action Required - Soft Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 20%;
+    --warning-bg: 45 100% 96%;
 
-    --radius: 0.5rem;
+    /* Success - Very Light Green */
+    --success: 145 40% 45%;
+    --success-foreground: 145 40% 15%;
+    --success-bg: 145 50% 96%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Progress Teal */
+    --progress: 174 55% 45%;
+    --progress-foreground: 0 0% 100%;
+    --progress-bg: 174 50% 95%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 210 65% 45%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 0.75rem;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Sidebar - using primary tones */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 210 20% 20%;
+    --sidebar-primary: 210 65% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 174 40% 92%;
+    --sidebar-accent-foreground: 174 55% 30%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 210 65% 45%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Custom LoanPulse tokens */
+    --lp-brand-teal: 174 55% 48%;
+    --lp-trust-blue: 210 65% 45%;
+    --lp-calm-green: 145 50% 96%;
+    --lp-action-amber: 45 100% 96%;
+    --lp-reject-muted: 0 45% 55%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Light mode only as per spec */
+    --background: 0 0% 99%;
+    --foreground: 210 20% 20%;
   }
 }
 
@@ -99,7 +88,141 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  h1, h2, h3 {
+    font-family: 'Source Serif 4', Georgia, serif;
+  }
+}
+
+@layer components {
+  /* Mobile-first container */
+  .lp-container {
+    @apply max-w-md mx-auto min-h-screen bg-background;
+  }
+
+  /* Safe area padding for mobile */
+  .lp-safe-bottom {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Value cards with trust styling */
+  .lp-value-card {
+    @apply bg-card rounded-xl p-5 border border-border/50;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  }
+
+  /* State indicator badges */
+  .lp-state-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+  }
+
+  .lp-state-progress {
+    @apply bg-progress-bg text-accent-foreground;
+  }
+
+  .lp-state-action {
+    @apply bg-warning-bg text-warning-foreground;
+  }
+
+  .lp-state-success {
+    @apply bg-success-bg text-success-foreground;
+  }
+
+  .lp-state-rejected {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  /* Timeline styling */
+  .lp-timeline-step {
+    @apply relative pl-8 pb-6;
+  }
+
+  .lp-timeline-step::before {
+    content: '';
+    @apply absolute left-[11px] top-7 bottom-0 w-0.5 bg-border;
+  }
+
+  .lp-timeline-step:last-child::before {
+    @apply hidden;
+  }
+
+  .lp-timeline-dot {
+    @apply absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center;
+  }
+
+  .lp-timeline-dot-active {
+    @apply bg-secondary text-secondary-foreground;
+  }
+
+  .lp-timeline-dot-complete {
+    @apply bg-success-bg text-success-foreground;
+  }
+
+  .lp-timeline-dot-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Bottom navigation */
+  .lp-bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Splash animation */
+  @keyframes lp-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes lp-pulse-soft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .lp-animate-fade-in {
+    animation: lp-fade-in 0.6s ease-out forwards;
+  }
+
+  .lp-animate-pulse-soft {
+    animation: lp-pulse-soft 2s ease-in-out infinite;
+  }
+
+  /* Stagger animations */
+  .lp-stagger-1 { animation-delay: 0.1s; }
+  .lp-stagger-2 { animation-delay: 0.2s; }
+  .lp-stagger-3 { animation-delay: 0.3s; }
+  .lp-stagger-4 { animation-delay: 0.4s; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 2px;
 }

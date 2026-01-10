@@ -1,13 +1,38 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { SplashScreen } from '@/components/screens/SplashScreen';
+import { PreLoanHome } from '@/components/screens/PreLoanHome';
+import { ApplicationTracking } from '@/components/screens/ApplicationTracking';
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { useLoan } from '@/contexts/LoanContext';
 
 const Index = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const { hasApplication, application } = useLoan();
+
+  // Check if we should show splash (only on initial load)
+  useEffect(() => {
+    const hasSeenSplash = sessionStorage.getItem('lp-splash-shown');
+    if (hasSeenSplash) {
+      setShowSplash(false);
+    }
+  }, []);
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('lp-splash-shown', 'true');
+    setShowSplash(false);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  // Show application tracking if user has an active application
+  const hasActiveApplication = hasApplication && application?.state !== 'draft';
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <MobileLayout>
+      {hasActiveApplication ? <ApplicationTracking /> : <PreLoanHome />}
+    </MobileLayout>
   );
 };
 

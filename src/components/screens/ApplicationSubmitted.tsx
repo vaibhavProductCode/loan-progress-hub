@@ -1,0 +1,84 @@
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, ArrowRight, Clock, FileCheck, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useLoan } from '@/contexts/LoanContext';
+
+export function ApplicationSubmitted() {
+  const navigate = useNavigate();
+  const { application } = useLoan();
+
+  const nextSteps = [
+    {
+      icon: FileCheck,
+      title: 'Document verification',
+      description: 'We\'ll verify your submitted documents',
+      eta: '1-2 days',
+    },
+    {
+      icon: Search,
+      title: 'Background checks',
+      description: 'KYC and credit verification',
+      eta: '2-3 days',
+    },
+    {
+      icon: Clock,
+      title: 'Final review',
+      description: 'Application review by the lender',
+      eta: '1-2 days',
+    },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col px-6 py-8">
+      {/* Success Icon */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 rounded-full bg-success-bg flex items-center justify-center mb-6 animate-scale-in">
+          <CheckCircle2 className="w-10 h-10 text-success" />
+        </div>
+
+        <h1 className="text-2xl font-semibold font-serif mb-3 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
+          Application Submitted
+        </h1>
+
+        <p className="text-muted-foreground mb-2 animate-fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
+          Your application <span className="font-medium text-foreground">{application?.id}</span> is now being processed.
+        </p>
+      </div>
+
+      {/* What happens next */}
+      <div className="animate-fade-in-up" style={{ animationDelay: '0.3s', opacity: 0 }}>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+          What happens next
+        </h2>
+
+        <div className="space-y-3 mb-8">
+          {nextSteps.map((step, index) => (
+            <div 
+              key={step.title}
+              className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border"
+            >
+              <div className="w-10 h-10 rounded-lg bg-progress-bg flex items-center justify-center flex-shrink-0">
+                <step.icon className="w-5 h-5 text-secondary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground mb-0.5">{step.title}</h3>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
+              </div>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                {step.eta}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <Button 
+          className="w-full h-12"
+          onClick={() => navigate('/application')}
+        >
+          Track my application
+          <ArrowRight className="w-5 h-5 ml-2" />
+        </Button>
+      </div>
+    </div>
+  );
+}
