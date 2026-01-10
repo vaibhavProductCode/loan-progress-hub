@@ -22,6 +22,16 @@ export type VerificationCategory = 'documents' | 'kyc' | 'credit-check';
 
 export type AIRiskLevel = 'low' | 'needs-review' | 'at-risk';
 
+export type EdgeCaseScenario = 
+  | 'happy-path'
+  | 'action-required-docs'
+  | 'aadhaar-failure'
+  | 'bank-verification-failure'
+  | 'credit-soft-reject'
+  | 'credit-hard-reject'
+  | 'delayed-processing'
+  | 'manual-review';
+
 export interface VerificationStep {
   id: string;
   category: VerificationCategory;
@@ -60,6 +70,7 @@ export interface LoanApplication {
   verificationSteps: VerificationStep[];
   documents: Document[];
   aiRiskLevel?: AIRiskLevel;
+  edgeCaseScenario?: EdgeCaseScenario;
   disbursement?: {
     amount: number;
     bankAccount: string;
@@ -69,6 +80,14 @@ export interface LoanApplication {
     reason: string;
     guidance: string;
   };
+}
+
+export interface UserProfile {
+  name: string;
+  aadhaarLast4: string;
+  bankName: string;
+  bankBranch: string;
+  isVerified: boolean;
 }
 
 export interface Notification {
@@ -95,4 +114,52 @@ export const validTransitions: Record<ApplicationState, ApplicationState[]> = {
   'disbursement-initiated': ['completed'],
   'completed': [],
   'closed-incomplete': [],
+};
+
+// Edge case configurations
+export const edgeCaseConfigs: Record<EdgeCaseScenario, { 
+  name: string; 
+  description: string;
+  targetState: ApplicationState;
+}> = {
+  'happy-path': {
+    name: 'Happy Path',
+    description: 'Smooth journey to approval and disbursement',
+    targetState: 'disbursement-initiated',
+  },
+  'action-required-docs': {
+    name: 'Action Required (Docs)',
+    description: 'Missing or unclear document upload',
+    targetState: 'action-required',
+  },
+  'aadhaar-failure': {
+    name: 'Aadhaar Failure',
+    description: 'KYC verification issue with Aadhaar',
+    targetState: 'action-required',
+  },
+  'bank-verification-failure': {
+    name: 'Bank Verification Failure',
+    description: 'Bank account verification failed',
+    targetState: 'action-required',
+  },
+  'credit-soft-reject': {
+    name: 'Credit Soft Reject',
+    description: 'Conditional approval with requirements',
+    targetState: 'conditional-approval',
+  },
+  'credit-hard-reject': {
+    name: 'Credit Hard Reject',
+    description: 'Application rejected after review',
+    targetState: 'rejected',
+  },
+  'delayed-processing': {
+    name: 'Delayed Processing',
+    description: 'Extended verification timeline',
+    targetState: 'verification-in-progress',
+  },
+  'manual-review': {
+    name: 'Manual Review Simulation',
+    description: 'Application under extended review',
+    targetState: 'review-in-progress',
+  },
 };

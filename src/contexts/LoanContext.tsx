@@ -1,57 +1,109 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LoanApplication, Notification, ApplicationState, LoanType, EmploymentType } from '@/types/loan';
+import { 
+  LoanApplication, 
+  Notification, 
+  ApplicationState, 
+  LoanType, 
+  EmploymentType, 
+  UserProfile,
+  EdgeCaseScenario,
+  edgeCaseConfigs 
+} from '@/types/loan';
 
 interface LoanContextType {
-  // Application state
-  hasApplication: boolean;
-  application: LoanApplication | null;
+  // Multi-application state
+  applications: LoanApplication[];
+  activeApplications: LoanApplication[];
+  completedApplications: LoanApplication[];
+  currentApplicationId: string | null;
   
-  // Navigation state
+  // User profile (from onboarding)
+  userProfile: UserProfile | null;
   hasCompletedOnboarding: boolean;
   
   // Notifications
   notifications: Notification[];
   unreadCount: number;
   
+  // Edge Case Explorer
+  edgeCaseMode: boolean;
+  selectedEdgeCases: EdgeCaseScenario[];
+  
   // Actions
-  startApplication: (loanType: LoanType, employmentType: EmploymentType) => void;
-  updateApplicationState: (state: ApplicationState) => void;
-  completeOnboarding: () => void;
+  startApplication: (loanType: LoanType, employmentType: EmploymentType, edgeCase?: EdgeCaseScenario) => string;
+  updateApplicationState: (appId: string, state: ApplicationState) => void;
+  setCurrentApplication: (appId: string | null) => void;
+  completeOnboarding: (profile: UserProfile) => void;
   markNotificationRead: (id: string) => void;
-  clearApplication: () => void;
+  
+  // Edge Case Explorer actions
+  setEdgeCaseMode: (enabled: boolean) => void;
+  toggleEdgeCase: (scenario: EdgeCaseScenario) => void;
+  runAllEdgeCases: () => void;
+  clearAllApplications: () => void;
 }
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
 export function LoanProvider({ children }: { children: ReactNode }) {
-  const [hasApplication, setHasApplication] = useState(false);
-  const [application, setApplication] = useState<LoanApplication | null>(null);
+  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [edgeCaseMode, setEdgeCaseModeState] = useState(false);
+  const [selectedEdgeCases, setSelectedEdgeCases] = useState<EdgeCaseScenario[]>([]);
 
   // Load persisted state
   useEffect(() => {
     const savedOnboarding = localStorage.getItem('lp-onboarding-complete');
-    const savedApplication = localStorage.getItem('lp-application');
+    const savedProfile = localStorage.getItem('lp-user-profile');
+    const savedApplications = localStorage.getItem('lp-applications');
     
     if (savedOnboarding === 'true') {
       setHasCompletedOnboarding(true);
     }
     
-    if (savedApplication) {
+    if (savedProfile) {
       try {
-        const app = JSON.parse(savedApplication);
-        setApplication(app);
-        setHasApplication(true);
+        setUserProfile(JSON.parse(savedProfile));
       } catch (e) {
-        console.error('Failed to parse saved application');
+        console.error('Failed to parse saved profile');
       }
+    }
+    
+    if (savedApplications) {
+      try {
+        const apps = JSON.parse(savedApplications);
+        setApplications(apps);
+      } catch (e) {
+        console.error('Failed to parse saved applications');
+      }
+    }
+
+    // Check for edge case mode via URL param
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('edgecase') === 'true') {
+      setEdgeCaseModeState(true);
     }
   }, []);
 
-  const startApplication = (loanType: LoanType, employmentType: EmploymentType) => {
+  // Persist applications
+  useEffect(() => {
+    localStorage.setItem('lp-applications', JSON.stringify(applications));
+  }, [applications]);
+
+  const activeApplications = applications.filter(app => 
+    !['completed', 'rejected', 'closed-incomplete'].includes(app.state)
+  );
+
+  const completedApplications = applications.filter(app => 
+    ['completed', 'rejected', 'closed-incomplete'].includes(app.state)
+  );
+
+  const startApplication = (loanType: LoanType, employmentType: EmploymentType, edgeCase?: EdgeCaseScenario): string => {
     const newApp: LoanApplication = {
-      id: `LP-${Date.now()}`,
+      id: `LP-${Date.now().toString(36).toUpperCase()}`,
       state: 'draft',
       loanType,
       employmentType,
@@ -61,44 +113,79 @@ export function LoanProvider({ children }: { children: ReactNode }) {
       totalSteps: 4,
       verificationSteps: [],
       documents: getRequiredDocuments(loanType, employmentType),
+      edgeCaseScenario: edgeCase,
     };
     
-    setApplication(newApp);
-    setHasApplication(true);
-    localStorage.setItem('lp-application', JSON.stringify(newApp));
+    setApplications(prev => [...prev, newApp]);
+    setCurrentApplicationId(newApp.id);
     
-    // Add notification
     addNotification({
       type: 'info',
       title: 'Application Started',
-      message: 'Your loan application has been created. Complete the form to submit.',
+      message: `Your ${loanType} loan application has been created.`,
+      applicationId: newApp.id,
     });
+
+    return newApp.id;
   };
 
-  const updateApplicationState = (state: ApplicationState) => {
-    if (!application) return;
+  const updateApplicationState = (appId: string, state: ApplicationState) => {
+    setApplications(prev => prev.map(app => {
+      if (app.id !== appId) return app;
+      
+      const updatedApp = {
+        ...app,
+        state,
+        updatedAt: new Date(),
+      };
+      
+      // Add state-specific data
+      if (state === 'rejected') {
+        updatedApp.rejection = {
+          reason: 'Credit assessment criteria not met',
+          guidance: 'You can reapply after 6 months with improved credit history.',
+        };
+      } else if (state === 'disbursement-initiated') {
+        updatedApp.disbursement = {
+          amount: app.amount || 250000,
+          bankAccount: 'XXXX-XXXX-1234',
+          expectedDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        };
+      } else if (state === 'action-required') {
+        updatedApp.verificationSteps = [{
+          id: 'doc-issue',
+          category: 'documents',
+          title: 'Document Issue',
+          description: 'A document needs your attention',
+          status: 'action-required',
+          actionRequired: {
+            issue: 'The uploaded bank statement is unclear or incomplete.',
+            resolution: 'Please upload a clear, complete bank statement for the last 6 months.',
+            example: 'Ensure all pages are visible and text is readable.',
+          },
+        }];
+      }
+      
+      return updatedApp;
+    }));
     
-    const updatedApp = {
-      ...application,
-      state,
-      updatedAt: new Date(),
-    };
-    
-    setApplication(updatedApp);
-    localStorage.setItem('lp-application', JSON.stringify(updatedApp));
-    
-    // Add state change notification
     addNotification({
       type: 'state-change',
       title: getStateTitle(state),
       message: getStateMessage(state),
-      applicationId: application.id,
+      applicationId: appId,
     });
   };
 
-  const completeOnboarding = () => {
+  const setCurrentApplication = (appId: string | null) => {
+    setCurrentApplicationId(appId);
+  };
+
+  const completeOnboarding = (profile: UserProfile) => {
+    setUserProfile(profile);
     setHasCompletedOnboarding(true);
     localStorage.setItem('lp-onboarding-complete', 'true');
+    localStorage.setItem('lp-user-profile', JSON.stringify(profile));
   };
 
   const markNotificationRead = (id: string) => {
@@ -107,10 +194,47 @@ export function LoanProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const clearApplication = () => {
-    setApplication(null);
-    setHasApplication(false);
-    localStorage.removeItem('lp-application');
+  const setEdgeCaseMode = (enabled: boolean) => {
+    setEdgeCaseModeState(enabled);
+  };
+
+  const toggleEdgeCase = (scenario: EdgeCaseScenario) => {
+    setSelectedEdgeCases(prev => 
+      prev.includes(scenario) 
+        ? prev.filter(s => s !== scenario)
+        : [...prev, scenario]
+    );
+  };
+
+  const runAllEdgeCases = () => {
+    const loanTypes: LoanType[] = ['personal', 'business', 'auto'];
+    const employmentTypes: EmploymentType[] = ['salaried', 'self-employed', 'gig-msme'];
+    
+    Object.keys(edgeCaseConfigs).forEach((scenario, index) => {
+      const edgeCase = scenario as EdgeCaseScenario;
+      const config = edgeCaseConfigs[edgeCase];
+      const loanType = loanTypes[index % loanTypes.length];
+      const employmentType = employmentTypes[index % employmentTypes.length];
+      
+      // Create application with this edge case
+      const appId = startApplication(loanType, employmentType, edgeCase);
+      
+      // Simulate progression through states
+      setTimeout(() => {
+        updateApplicationState(appId, 'submitted');
+        setTimeout(() => {
+          if (config.targetState !== 'submitted') {
+            updateApplicationState(appId, config.targetState);
+          }
+        }, 200);
+      }, 100 + index * 50);
+    });
+  };
+
+  const clearAllApplications = () => {
+    setApplications([]);
+    setCurrentApplicationId(null);
+    localStorage.removeItem('lp-applications');
   };
 
   const addNotification = (notif: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
@@ -127,16 +251,25 @@ export function LoanProvider({ children }: { children: ReactNode }) {
 
   return (
     <LoanContext.Provider value={{
-      hasApplication,
-      application,
+      applications,
+      activeApplications,
+      completedApplications,
+      currentApplicationId,
+      userProfile,
       hasCompletedOnboarding,
       notifications,
       unreadCount,
+      edgeCaseMode,
+      selectedEdgeCases,
       startApplication,
       updateApplicationState,
+      setCurrentApplication,
       completeOnboarding,
       markNotificationRead,
-      clearApplication,
+      setEdgeCaseMode,
+      toggleEdgeCase,
+      runAllEdgeCases,
+      clearAllApplications,
     }}>
       {children}
     </LoanContext.Provider>
