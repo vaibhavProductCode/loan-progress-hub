@@ -37,7 +37,7 @@ export function LoanTypeSelection() {
       setStep('employment');
     } else if (step === 'employment' && selectedLoan && selectedEmployment) {
       startApplication(selectedLoan, selectedEmployment);
-      navigate('/apply/documents');
+      navigate('/apply/user-details');
     }
   };
 

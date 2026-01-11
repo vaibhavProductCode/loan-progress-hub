@@ -38,37 +38,7 @@ const stateProgression = [
 export function ApplicationTracking() {
   const navigate = useNavigate();
   const { currentApplicationId, applications, updateApplicationState } = useLoan();
-  const [countdown, setCountdown] = useState(3);
-  
   const application = applications.find(a => a.id === currentApplicationId) || applications.find(a => !['completed', 'rejected', 'closed-incomplete'].includes(a.state));
-
-  // Auto-progress through states every 3 seconds (demo mode)
-  useEffect(() => {
-    if (!application) return;
-    
-    const currentStateIndex = stateProgression.indexOf(application.state);
-    const isTerminalState = ['completed', 'rejected', 'closed-incomplete'].includes(application.state);
-    
-    if (isTerminalState) return;
-
-    setCountdown(3);
-    
-    const countdownTimer = setInterval(() => {
-      setCountdown(prev => Math.max(0, prev - 1));
-    }, 1000);
-
-    const timer = setTimeout(() => {
-      const nextStateIndex = currentStateIndex + 1;
-      if (nextStateIndex < stateProgression.length) {
-        updateApplicationState(application.id, stateProgression[nextStateIndex] as any);
-      }
-    }, 3000);
-    
-    return () => {
-      clearTimeout(timer);
-      clearInterval(countdownTimer);
-    };
-  }, [application?.state, application?.id, updateApplicationState]);
 
   if (!application || application.state === 'draft') {
     navigate('/');
@@ -93,67 +63,36 @@ export function ApplicationTracking() {
     return 'pending';
   };
 
-  return (
-    <div className="min-h-screen flex flex-col px-6 py-6 pb-24">
-      <div className="flex items-center justify-between mb-6">
-        <img src={logo} alt="LoanPulse" className="h-7" />
-        <span className="text-sm text-muted-foreground">{application.id}</span>
-      </div>
+  // Redirect to specific state pages based on current application state
+  useEffect(() => {
+    if (!application) return;
+    
+    switch (application.state) {
+      case 'submitted':
+        navigate('/application/submitted');
+        break;
+      case 'verification-in-progress':
+        navigate('/application/verification');
+        break;
+      case 'review-in-progress':
+        navigate('/application/review');
+        break;
+      case 'approved':
+      case 'conditional-approval':
+      case 'rejected':
+        navigate('/application/decision');
+        break;
+      case 'disbursement-initiated':
+        navigate('/application/disbursement');
+        break;
+      case 'completed':
+        navigate('/application/completed');
+        break;
+      default:
+        break;
+    }
+  }, [application, navigate]);
 
-      <div className={cn("rounded-xl p-5 mb-6", isActionRequired ? "bg-warning-bg" : "bg-card border border-border")}>
-        <div className="flex items-start gap-4">
-          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", isActionRequired ? "bg-warning/20" : "bg-progress-bg")}>
-            {isActionRequired ? <AlertCircle className="w-6 h-6 text-warning" /> : <FileText className="w-6 h-6 text-secondary" />}
-          </div>
-          <div className="flex-1">
-            <span className={cn("lp-state-badge mb-2", state.color)}>{state.label}</span>
-            <p className="text-sm text-foreground mt-2">{state.description}</p>
-          </div>
-        </div>
-        {isActionRequired && (
-          <button className="w-full mt-4 py-3 bg-warning text-warning-foreground rounded-lg font-semibold flex items-center justify-center gap-2" onClick={() => navigate('/application/action')}>
-            View & Resolve <ChevronRight className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Application Timeline</h2>
-        <div className="relative">
-          {timelineSteps.map((step) => {
-            const status = getTimelineStatus(step.id);
-            return (
-              <div key={step.id} className="lp-timeline-step">
-                <div className={cn("lp-timeline-dot", status === 'complete' && "lp-timeline-dot-complete", status === 'active' && "lp-timeline-dot-active", status === 'pending' && "lp-timeline-dot-pending")}>
-                  {status === 'complete' ? <CheckCircle2 className="w-4 h-4" /> : status === 'active' ? <Clock className="w-4 h-4" /> : <div className="w-2 h-2 rounded-full bg-current" />}
-                </div>
-                <div>
-                  <p className={cn("font-medium", status === 'pending' ? "text-muted-foreground" : "text-foreground")}>{step.label}</p>
-                  {status === 'active' && <p className="text-sm text-muted-foreground mt-0.5">In progress</p>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="bg-muted/50 rounded-xl p-4">
-        <h3 className="font-semibold text-foreground mb-2">What's happening now</h3>
-        <p className="text-sm text-muted-foreground">{state.description}</p>
-        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-          <Clock className="w-4 h-4" /><span>Estimated: 2-3 business days</span>
-        </div>
-        {!isTerminalState && (
-          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-4 pt-3 border-t border-border">
-            <span>Next update in {countdown}s</span>
-            <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // Don't render the old content since we're redirecting
+  return null;
 }

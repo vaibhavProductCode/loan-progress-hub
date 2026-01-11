@@ -24,11 +24,12 @@ const Index = () => {
     // Check if splash was already shown this session
     const hasSeenSplash = sessionStorage.getItem('lp-splash-shown');
     
-    if (hasSeenSplash) {
+    // Always check authentication state first, regardless of splash status
+    if (isAuthenticated && hasCompletedOnboarding) {
+      setCurrentFlow('home');
+    } else if (hasSeenSplash) {
       // Determine where to go based on auth state
-      if (isAuthenticated && hasCompletedOnboarding) {
-        setCurrentFlow('home');
-      } else if (hasSeenExplainer) {
+      if (hasSeenExplainer) {
         setCurrentFlow('login');
       } else {
         setCurrentFlow('explainer');
@@ -39,7 +40,7 @@ const Index = () => {
   const handleSplashComplete = () => {
     sessionStorage.setItem('lp-splash-shown', 'true');
     
-    // If already authenticated, go to home
+    // If already authenticated and completed onboarding, go to home
     if (isAuthenticated && hasCompletedOnboarding) {
       setCurrentFlow('home');
     } else if (hasSeenExplainer) {

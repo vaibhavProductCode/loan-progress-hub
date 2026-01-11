@@ -4,15 +4,18 @@ import { CheckCircle2, ArrowRight, Clock, FileCheck, Search, Home } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useLoan } from '@/contexts/LoanContext';
 
-export function ApplicationSubmitted() {
+export function ApplicationSubmittedState() {
   const navigate = useNavigate();
   const { currentApplicationId, applications, updateApplicationState } = useLoan();
+  const [countdown, setCountdown] = useState(4);
+  
   const application = applications.find(a => a.id === currentApplicationId);
+
+
 
   const nextSteps = [
     { icon: FileCheck, title: 'Document verification', description: "We'll verify your submitted documents", eta: '1-2 days' },
     { icon: Search, title: 'Background checks', description: 'KYC and credit verification', eta: '2-3 days' },
-    { icon: Clock, title: 'Final review', description: 'Application review by the lender', eta: '1-2 days' },
   ];
 
   return (
@@ -48,9 +51,9 @@ export function ApplicationSubmitted() {
             if (currentApplicationId) {
               updateApplicationState(currentApplicationId, 'verification-in-progress');
             }
-            navigate('/application');
+            navigate('/application/verification');
           }}>
-            Track my application <ArrowRight className="w-5 h-5 ml-2" />
+            Continue to Verification <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
           <Button variant="outline" className="w-full h-12" onClick={() => navigate('/')}>
             <Home className="w-5 h-5 mr-2" /> Back to Home

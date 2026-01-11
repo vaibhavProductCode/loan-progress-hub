@@ -50,6 +50,21 @@ interface LoanContextType {
   toggleEdgeCase: (scenario: EdgeCaseScenario) => void;
   runAllEdgeCases: () => void;
   clearAllApplications: () => void;
+  
+  // User Details actions
+  updateUserDetails: (appId: string, details: {
+    fullName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    address: string;
+    employer: string;
+    designation: string;
+    workExperience: string;
+    monthlyIncome: string;
+    loanAmount: string;
+    loanPurpose: string;
+  }) => void;
 }
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
@@ -286,6 +301,32 @@ export function LoanProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('lp-applications');
   };
 
+  const updateUserDetails = (appId: string, details: {
+    fullName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    address: string;
+    employer: string;
+    designation: string;
+    workExperience: string;
+    monthlyIncome: string;
+    loanAmount: string;
+    loanPurpose: string;
+  }) => {
+    setApplications(prev => 
+      prev.map(app => {
+        if (app.id === appId) {
+          return {
+            ...app,
+            userDetails: details
+          };
+        }
+        return app;
+      })
+    );
+  };
+
   const addNotification = (notif: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotif: Notification = {
       ...notif,
@@ -324,6 +365,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
       toggleEdgeCase,
       runAllEdgeCases,
       clearAllApplications,
+      updateUserDetails,
     }}>
       {children}
     </LoanContext.Provider>

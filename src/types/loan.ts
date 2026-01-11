@@ -71,6 +71,19 @@ export interface LoanApplication {
   documents: Document[];
   aiRiskLevel?: AIRiskLevel;
   edgeCaseScenario?: EdgeCaseScenario;
+  userDetails?: {
+    fullName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    address: string;
+    employer: string;
+    designation: string;
+    workExperience: string;
+    monthlyIncome: string;
+    loanAmount: string;
+    loanPurpose: string;
+  };
   disbursement?: {
     amount: number;
     bankAccount: string;

@@ -17,6 +17,18 @@ import Application from "./pages/Application";
 import Notifications from "./pages/Notifications";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
+import UserDetailsForm from "./pages/UserDetailsForm";
+
+// Individual State Screens
+import DocumentUpload from './pages/DocumentUpload';
+import ApplicationSubmittedState from './pages/ApplicationSubmittedState';
+import VerificationState from './pages/VerificationState';
+import ReviewState from './pages/ReviewState';
+import DecisionState from './pages/DecisionState';
+import DisbursementState from './pages/DisbursementState';
+import CompletedState from './pages/CompletedState';
+
+
 
 const queryClient = new QueryClient();
 
@@ -32,10 +44,17 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/apply/loan-type" element={<ApplyLoanType />} />
-            <Route path="/apply/documents" element={<ApplyDocuments />} />
+            <Route path="/apply/user-details" element={<UserDetailsForm />} />
+            <Route path="/apply/documents" element={<DocumentUpload />} />
             <Route path="/apply/form" element={<ApplyForm />} />
             <Route path="/apply/submitted" element={<ApplySubmitted />} />
             <Route path="/application" element={<Application />} />
+            <Route path="/application/submitted" element={<ApplicationSubmittedState />} />
+            <Route path="/application/verification" element={<VerificationState />} />
+            <Route path="/application/review" element={<ReviewState />} />
+            <Route path="/application/decision" element={<DecisionState />} />
+            <Route path="/application/disbursement" element={<DisbursementState />} />
+            <Route path="/application/completed" element={<CompletedState />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/help" element={<Help />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
