@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Clock, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import { useLoan } from '@/contexts/LoanContext';
@@ -25,11 +26,49 @@ const timelineSteps = [
   { id: 'disbursement', label: 'Disbursement' },
 ];
 
+// State progression order for auto-advance (demo mode)
+const stateProgression = [
+  'verification-in-progress',
+  'review-in-progress',
+  'approved',
+  'disbursement-initiated',
+  'completed'
+];
+
 export function ApplicationTracking() {
   const navigate = useNavigate();
-  const { currentApplicationId, applications } = useLoan();
+  const { currentApplicationId, applications, updateApplicationState } = useLoan();
+  const [countdown, setCountdown] = useState(3);
   
   const application = applications.find(a => a.id === currentApplicationId) || applications.find(a => !['completed', 'rejected', 'closed-incomplete'].includes(a.state));
+
+  // Auto-progress through states every 3 seconds (demo mode)
+  useEffect(() => {
+    if (!application) return;
+    
+    const currentStateIndex = stateProgression.indexOf(application.state);
+    const isTerminalState = ['completed', 'rejected', 'closed-incomplete'].includes(application.state);
+    
+    if (isTerminalState) return;
+
+    setCountdown(3);
+    
+    const countdownTimer = setInterval(() => {
+      setCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    const timer = setTimeout(() => {
+      const nextStateIndex = currentStateIndex + 1;
+      if (nextStateIndex < stateProgression.length) {
+        updateApplicationState(application.id, stateProgression[nextStateIndex] as any);
+      }
+    }, 3000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(countdownTimer);
+    };
+  }, [application?.state, application?.id, updateApplicationState]);
 
   if (!application || application.state === 'draft') {
     navigate('/');
@@ -38,6 +77,7 @@ export function ApplicationTracking() {
 
   const state = stateInfo[application.state] || stateInfo['submitted'];
   const isActionRequired = application.state === 'action-required';
+  const isTerminalState = ['completed', 'rejected', 'closed-incomplete'].includes(application.state);
 
   const getTimelineStatus = (stepId: string) => {
     const stateMap: Record<string, number> = {
@@ -103,6 +143,16 @@ export function ApplicationTracking() {
         <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
           <Clock className="w-4 h-4" /><span>Estimated: 2-3 business days</span>
         </div>
+        {!isTerminalState && (
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-4 pt-3 border-t border-border">
+            <span>Next update in {countdown}s</span>
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
