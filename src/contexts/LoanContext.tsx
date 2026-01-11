@@ -11,6 +11,11 @@ import {
 } from '@/types/loan';
 
 interface LoanContextType {
+  // Auth state
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  hasSeenExplainer: boolean;
+  
   // Multi-application state
   applications: LoanApplication[];
   activeApplications: LoanApplication[];
@@ -19,7 +24,6 @@ interface LoanContextType {
   
   // User profile (from onboarding)
   userProfile: UserProfile | null;
-  hasCompletedOnboarding: boolean;
   
   // Notifications
   notifications: Notification[];
@@ -29,7 +33,12 @@ interface LoanContextType {
   edgeCaseMode: boolean;
   selectedEdgeCases: EdgeCaseScenario[];
   
-  // Actions
+  // Auth Actions
+  setAuthenticated: (value: boolean) => void;
+  setExplainerSeen: () => void;
+  logout: () => void;
+  
+  // Application Actions
   startApplication: (loanType: LoanType, employmentType: EmploymentType, edgeCase?: EdgeCaseScenario) => string;
   updateApplicationState: (appId: string, state: ApplicationState) => void;
   setCurrentApplication: (appId: string | null) => void;
@@ -46,6 +55,8 @@ interface LoanContextType {
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
 export function LoanProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticatedState] = useState(false);
+  const [hasSeenExplainer, setHasSeenExplainer] = useState(false);
   const [applications, setApplications] = useState<LoanApplication[]>([]);
   const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -56,9 +67,19 @@ export function LoanProvider({ children }: { children: ReactNode }) {
 
   // Load persisted state
   useEffect(() => {
+    const savedAuth = localStorage.getItem('lp-authenticated');
     const savedOnboarding = localStorage.getItem('lp-onboarding-complete');
     const savedProfile = localStorage.getItem('lp-user-profile');
     const savedApplications = localStorage.getItem('lp-applications');
+    const savedExplainer = localStorage.getItem('lp-explainer-seen');
+    
+    if (savedAuth === 'true') {
+      setIsAuthenticatedState(true);
+    }
+    
+    if (savedExplainer === 'true') {
+      setHasSeenExplainer(true);
+    }
     
     if (savedOnboarding === 'true') {
       setHasCompletedOnboarding(true);
@@ -100,6 +121,32 @@ export function LoanProvider({ children }: { children: ReactNode }) {
   const completedApplications = applications.filter(app => 
     ['completed', 'rejected', 'closed-incomplete'].includes(app.state)
   );
+
+  const setAuthenticated = (value: boolean) => {
+    setIsAuthenticatedState(value);
+    localStorage.setItem('lp-authenticated', value ? 'true' : 'false');
+  };
+
+  const setExplainerSeen = () => {
+    setHasSeenExplainer(true);
+    localStorage.setItem('lp-explainer-seen', 'true');
+  };
+
+  const logout = () => {
+    setIsAuthenticatedState(false);
+    setHasCompletedOnboarding(false);
+    setHasSeenExplainer(false);
+    setUserProfile(null);
+    setApplications([]);
+    setCurrentApplicationId(null);
+    
+    localStorage.removeItem('lp-authenticated');
+    localStorage.removeItem('lp-onboarding-complete');
+    localStorage.removeItem('lp-user-profile');
+    localStorage.removeItem('lp-applications');
+    localStorage.removeItem('lp-explainer-seen');
+    sessionStorage.removeItem('lp-splash-shown');
+  };
 
   const startApplication = (loanType: LoanType, employmentType: EmploymentType, edgeCase?: EdgeCaseScenario): string => {
     const newApp: LoanApplication = {
@@ -184,8 +231,10 @@ export function LoanProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = (profile: UserProfile) => {
     setUserProfile(profile);
     setHasCompletedOnboarding(true);
+    setIsAuthenticatedState(true);
     localStorage.setItem('lp-onboarding-complete', 'true');
     localStorage.setItem('lp-user-profile', JSON.stringify(profile));
+    localStorage.setItem('lp-authenticated', 'true');
   };
 
   const markNotificationRead = (id: string) => {
@@ -251,16 +300,21 @@ export function LoanProvider({ children }: { children: ReactNode }) {
 
   return (
     <LoanContext.Provider value={{
+      isAuthenticated,
+      hasCompletedOnboarding,
+      hasSeenExplainer,
       applications,
       activeApplications,
       completedApplications,
       currentApplicationId,
       userProfile,
-      hasCompletedOnboarding,
       notifications,
       unreadCount,
       edgeCaseMode,
       selectedEdgeCases,
+      setAuthenticated,
+      setExplainerSeen,
+      logout,
       startApplication,
       updateApplicationState,
       setCurrentApplication,

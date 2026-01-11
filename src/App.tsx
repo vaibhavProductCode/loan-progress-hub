@@ -8,6 +8,7 @@ import { LoanProvider } from "@/contexts/LoanContext";
 // Pages
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
+import Profile from "./pages/Profile";
 import ApplyLoanType from "./pages/ApplyLoanType";
 import ApplyDocuments from "./pages/ApplyDocuments";
 import ApplyForm from "./pages/ApplyForm";
@@ -29,6 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/apply/loan-type" element={<ApplyLoanType />} />
             <Route path="/apply/documents" element={<ApplyDocuments />} />
             <Route path="/apply/form" element={<ApplyForm />} />

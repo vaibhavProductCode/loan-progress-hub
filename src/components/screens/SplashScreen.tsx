@@ -27,16 +27,16 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         <img 
           src={logo} 
           alt="LoanPulse" 
-          className="h-12 object-contain"
+          className="h-16 object-contain"
         />
-        <p className="text-muted-foreground text-center text-sm lp-animate-fade-in lp-stagger-2 opacity-0">
+        <p className="text-muted-foreground text-center text-base lp-animate-fade-in lp-stagger-2 opacity-0">
           Know where your loan stands
         </p>
       </div>
       
       {/* Loading indicator */}
-      <div className="absolute bottom-20 lp-animate-fade-in lp-stagger-3 opacity-0">
-        <div className="flex gap-1">
+      <div className="absolute bottom-24 lp-animate-fade-in lp-stagger-3 opacity-0">
+        <div className="flex gap-1.5">
           <span className="w-2 h-2 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0s' }} />
           <span className="w-2 h-2 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0.2s' }} />
           <span className="w-2 h-2 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0.4s' }} />

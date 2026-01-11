@@ -45,6 +45,7 @@ export function OnboardingScreen() {
   const [selectedBranch, setSelectedBranch] = useState('');
   const [bankSearch, setBankSearch] = useState('');
   const [branchSearch, setBranchSearch] = useState('');
+  const [isExiting, setIsExiting] = useState(false);
   
   const navigate = useNavigate();
   const { completeOnboarding } = useLoan();
@@ -68,7 +69,7 @@ export function OnboardingScreen() {
     if (aadhaarNumber.replace(/\s/g, '').length !== 12 || !aadhaarConsent) return;
     
     setIsVerifying(true);
-    // Simulate verification (5 seconds demo mode)
+    // Simulate verification (3 seconds demo mode)
     setTimeout(() => {
       setIsVerifying(false);
       setStep('bank');
@@ -80,16 +81,30 @@ export function OnboardingScreen() {
     setStep('confirmation');
   };
 
+  // Auto-advance from confirmation after 3 seconds
+  useEffect(() => {
+    if (step === 'confirmation') {
+      const timer = setTimeout(() => {
+        handleComplete();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
   const handleComplete = () => {
     const last4 = aadhaarNumber.replace(/\s/g, '').slice(-4);
-    completeOnboarding({
-      name: 'User', // In real app, this would come from Aadhaar verification
-      aadhaarLast4: last4,
-      bankName: selectedBank,
-      bankBranch: selectedBranch,
-      isVerified: true,
-    });
-    navigate('/');
+    setIsExiting(true);
+    
+    setTimeout(() => {
+      completeOnboarding({
+        name: 'User',
+        aadhaarLast4: last4,
+        bankName: selectedBank,
+        bankBranch: selectedBranch,
+        isVerified: true,
+      });
+      navigate('/');
+    }, 300);
   };
 
   const filteredBanks = BANKS.filter(bank => 
@@ -104,7 +119,10 @@ export function OnboardingScreen() {
   // Render based on step
   if (step === 'aadhaar') {
     return (
-      <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+      <div className={cn(
+        "min-h-screen flex flex-col px-6 py-8 bg-background transition-opacity duration-300",
+        isExiting ? 'opacity-0' : 'opacity-100'
+      )}>
         {/* Progress */}
         <div className="flex gap-2 mb-8">
           <div className="flex-1 h-1 bg-primary rounded-full" />
@@ -180,7 +198,10 @@ export function OnboardingScreen() {
 
   if (step === 'bank') {
     return (
-      <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+      <div className={cn(
+        "min-h-screen flex flex-col px-6 py-8 bg-background transition-opacity duration-300",
+        isExiting ? 'opacity-0' : 'opacity-100'
+      )}>
         {/* Progress */}
         <div className="flex gap-2 mb-8">
           <div className="flex-1 h-1 bg-primary rounded-full" />
@@ -294,26 +315,18 @@ export function OnboardingScreen() {
     );
   }
 
-  // Confirmation step
+  // Confirmation step with auto-advance
   return (
-    <div className="min-h-screen flex flex-col px-6 py-8 bg-background">
+    <div className={cn(
+      "min-h-screen flex flex-col px-6 py-8 bg-background transition-opacity duration-300",
+      isExiting ? 'opacity-0' : 'opacity-100'
+    )}>
       {/* Progress */}
       <div className="flex gap-2 mb-8">
         <div className="flex-1 h-1 bg-primary rounded-full" />
         <div className="flex-1 h-1 bg-primary rounded-full" />
         <div className="flex-1 h-1 bg-primary rounded-full" />
       </div>
-
-      {/* Back button */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="w-fit mb-4 -ml-2"
-        onClick={() => setStep('bank')}
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
 
       {/* Icon */}
       <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mb-6">
@@ -322,10 +335,10 @@ export function OnboardingScreen() {
 
       {/* Content */}
       <h1 className="text-2xl font-semibold text-foreground mb-2 font-serif">
-        Confirm your details
+        Profile confirmed
       </h1>
       <p className="text-muted-foreground mb-8">
-        Please review your information before proceeding.
+        Your information has been verified successfully.
       </p>
 
       <div className="flex-1 space-y-4">
@@ -355,14 +368,15 @@ export function OnboardingScreen() {
         </div>
       </div>
 
-      {/* CTA */}
-      <Button 
-        className="w-full h-12 mt-auto bg-secondary hover:bg-secondary/90"
-        onClick={handleComplete}
-      >
-        Continue to Home
-        <ArrowRight className="w-5 h-5 ml-2" />
-      </Button>
+      {/* Auto-advance indicator */}
+      <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm pb-8">
+        <span>Moving to home</span>
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0.2s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary lp-animate-pulse-soft" style={{ animationDelay: '0.4s' }} />
+        </div>
+      </div>
     </div>
   );
 }
