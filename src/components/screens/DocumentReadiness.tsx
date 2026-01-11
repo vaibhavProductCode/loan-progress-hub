@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,27 @@ import { cn } from '@/lib/utils';
 export function DocumentReadiness() {
   const navigate = useNavigate();
   const { currentApplicationId, applications } = useLoan();
+  const [countdown, setCountdown] = useState(4);
   
   const application = applications.find(a => a.id === currentApplicationId);
+
+  // Auto-advance after 4 seconds
+  useEffect(() => {
+    if (!application) return;
+    
+    const countdownTimer = setInterval(() => {
+      setCountdown(prev => prev - 1);
+    }, 1000);
+
+    const advanceTimer = setTimeout(() => {
+      navigate('/apply/form');
+    }, 4000);
+    
+    return () => {
+      clearInterval(countdownTimer);
+      clearTimeout(advanceTimer);
+    };
+  }, [navigate, application]);
 
   if (!application) {
     navigate('/');
@@ -69,8 +89,16 @@ export function DocumentReadiness() {
       )}
 
       <div className="mt-auto space-y-3">
+        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-3">
+          <span>Continuing in {countdown}s</span>
+          <div className="flex gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
+          </div>
+        </div>
         <Button className="w-full h-12" onClick={() => navigate('/apply/form')}>
-          Continue to application <ArrowRight className="w-5 h-5 ml-2" />
+          Continue now <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
     </div>

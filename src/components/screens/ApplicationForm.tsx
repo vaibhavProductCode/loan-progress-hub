@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,10 +28,29 @@ export function ApplicationForm() {
 
   const currentIndex = steps.findIndex(s => s.id === currentStep);
   const isLastStep = currentStep === 'review';
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState(3);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Auto-advance through form steps (demo mode - 3 seconds per step)
+  useEffect(() => {
+    setAutoAdvanceCountdown(3);
+    
+    const countdownTimer = setInterval(() => {
+      setAutoAdvanceCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    const timer = setTimeout(() => {
+      handleNext();
+    }, 3000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(countdownTimer);
+    };
+  }, [currentStep]);
 
   const handleNext = () => {
     if (isLastStep) {
@@ -107,10 +126,19 @@ export function ApplicationForm() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-2 mb-4">
         {steps.map((step, index) => (
           <div key={step.id} className={cn("flex-1 h-1.5 rounded-full transition-colors", index <= currentIndex ? "bg-primary" : "bg-border")} />
         ))}
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-4">
+        <span>Auto-advancing in {autoAdvanceCountdown}s</span>
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
+        </div>
       </div>
 
       <div className="flex-1">{renderStepContent()}</div>

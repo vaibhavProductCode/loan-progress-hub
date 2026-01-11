@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Briefcase, Car, User, Building2, UserCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,16 @@ export function LoanTypeSelection() {
   const setSelected = step === 'loan' 
     ? (id: string) => setSelectedLoan(id as LoanType)
     : (id: string) => setSelectedEmployment(id as EmploymentType);
+
+  // Auto-advance after selection
+  useEffect(() => {
+    if (selected) {
+      const timer = setTimeout(() => {
+        handleContinue();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selected, step]);
 
   return (
     <div className="min-h-screen flex flex-col px-6 py-8">

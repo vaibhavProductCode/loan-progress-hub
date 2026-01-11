@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, Clock, FileCheck, Search, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,9 +6,29 @@ import { useLoan } from '@/contexts/LoanContext';
 
 export function ApplicationSubmitted() {
   const navigate = useNavigate();
-  const { currentApplicationId, applications } = useLoan();
+  const { currentApplicationId, applications, updateApplicationState } = useLoan();
+  const [countdown, setCountdown] = useState(4);
   
   const application = applications.find(a => a.id === currentApplicationId);
+
+  // Auto-advance to tracking after 4 seconds & update state to verification
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    const timer = setTimeout(() => {
+      if (currentApplicationId) {
+        updateApplicationState(currentApplicationId, 'verification-in-progress');
+      }
+      navigate('/application');
+    }, 4000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(countdownTimer);
+    };
+  }, [navigate, currentApplicationId, updateApplicationState]);
 
   const nextSteps = [
     { icon: FileCheck, title: 'Document verification', description: "We'll verify your submitted documents", eta: '1-2 days' },
@@ -44,6 +65,14 @@ export function ApplicationSubmitted() {
           ))}
         </div>
         <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-3">
+            <span>Moving to tracking in {countdown}s</span>
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
+            </div>
+          </div>
           <Button className="w-full h-12" onClick={() => navigate('/application')}>
             Track my application <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
